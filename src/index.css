@@ -12,6 +12,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  margin: 0;
 }
 
 h1 {
@@ -21,14 +22,14 @@ h1 {
   font-size: 24px;
 }
 
-.main-container{
+.main-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   width: 1000px;
-  
 }
+
 /* Container for the App */
 .container {
   background-color: #fff;
@@ -68,25 +69,44 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start; /* Start at the top to keep heading and buttons visible */
   border: 2px solid black;
   border-radius: 20px;
   padding: 10px;
-  margin-top: 600px;
+  margin: 0 auto;
+  width: 80%; /* Adjust width to be a bit smaller than the full container */
+  max-height: 80vh; /* Limit the height of the container */
+  overflow: hidden; /* Hide anything that exceeds the max height */
+  position: relative;
+  gap:30px;
+  margin-top:100px
 }
 
-.certificates ul {
+.certificates .certificate-list {
   list-style: none;
   padding: 0;
-  
+  margin: 0;
+  overflow-y: auto; /* Make the list scrollable */
+  width: 100%;
 }
 
-.certificates li {
-  margin: 10px 0;
+.certificates .certificate-list li{
+margin-top: 10px;
 }
 
-.certificates button:hover {
-  background-color: #1976d2;
+/* This will ensure that the header remains visible even with large lists */
+.certificates .header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  z-index: 1; /* Ensure header stays on top */
 }
+
+.certificates .header h3 {
+  margin-bottom: 10px;
+}
+
 
 /* Error Handling Styles */
 .error-message {

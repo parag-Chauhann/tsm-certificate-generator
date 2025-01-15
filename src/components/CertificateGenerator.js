@@ -53,6 +53,7 @@ const CertificateGenerator = ({ template, certificates, onBack }) => {
   };
 
   return (
+
     <div className="certificates">
       <h3>Generated Certificates:</h3>
       <div className="back-download-button">
