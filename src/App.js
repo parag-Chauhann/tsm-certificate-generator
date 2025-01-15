@@ -5,7 +5,7 @@ import CertificateGenerator from "./components/CertificateGenerator";
 import { db } from "./firebase"; // Ensure this is after Firebase initialization
 import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
 // import WordToPdfConverter from "./components/wordToPdfConvertor";
-import WordToPdfConverter from "./components/WordToPdfConvertor";  // Correct file casing
+import WordToPdfConverter from "./components/wordToPdfConvertor";  // Correct file casing
 
 
 
