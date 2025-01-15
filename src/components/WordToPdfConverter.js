@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./WordToPdfConvertor.css";
+import "./wordToPdfConvertor.css";
 
 const WordToPdfConverter = () => {
   const [files, setFiles] = useState([]);
