@@ -4,8 +4,8 @@ import FileUpload from "./components/FileUpload";
 import CertificateGenerator from "./components/CertificateGenerator";
 import { db } from "./firebase"; // Ensure this is after Firebase initialization
 import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
-// import WordToPdfConverter from "./components/wordToPdfConvertor";
-import WordToPdfConverter from "./components/wordToPdfConvertor";  // Correct file casing
+import WordToPdfConverter from "./components/WordToPdfConverter";
+
 
 
 
@@ -164,7 +164,6 @@ const App = () => {
                 )
               }
             />
-            {/* <Route path="/word-to-pdf" element={<WordToPdfConverter />} /> */}
             <Route path="/word-to-pdf" element={<WordToPdfConverter />} />
           </Routes>
         </div>
