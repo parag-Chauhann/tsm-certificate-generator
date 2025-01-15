@@ -22,15 +22,17 @@ const WordToPdfConverter = () => {
     Array.from(files).forEach((file) => formData.append("files", file));
 
     try {
+      // Update the backend URL to match your deployed backend on Render
       const response = await axios.post(
-        "http://127.0.0.1:5000/api/convert", // Ensure backend URL is correct
+        "https://certificate-generator-backend-452o.onrender.com/api/convert", // Your Render API URL
         formData,
         {
-          responseType: "blob",
+          responseType: "blob", // This ensures you get the ZIP file
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
 
+      // Creating a download link for the response data (ZIP file)
       const url = URL.createObjectURL(new Blob([response.data]));
       setDownloadLink(url);
     } catch (error) {
