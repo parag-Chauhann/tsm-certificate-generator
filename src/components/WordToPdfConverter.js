@@ -24,9 +24,7 @@ const WordToPdfConverter = () => {
     try {
       // Update the backend URL to match your deployed backend on Render
       const response = await axios.post(
-        // "https://certificate-generator-backend-452o.onrender.com/api/convert", // Your Render API URL
-        "http://localhost:5000/api/convert",
-       
+        "https://certificate-generator-backend-452o.onrender.com/api/convert", // Updated backend URL
         formData,
         {
           responseType: "blob", // This ensures you get the ZIP file
