@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./wordToPdfConvertor.css";
+import "./WordToPdfConvertor.css";
 
 const WordToPdfConverter = () => {
   const [files, setFiles] = useState([]);
@@ -24,7 +24,9 @@ const WordToPdfConverter = () => {
     try {
       // Update the backend URL to match your deployed backend on Render
       const response = await axios.post(
-        "https://certificate-generator-backend-452o.onrender.com/api/convert", // Your Render API URL
+        // "https://certificate-generator-backend-452o.onrender.com/api/convert", // Your Render API URL
+        "http://localhost:5000/api/convert",
+       
         formData,
         {
           responseType: "blob", // This ensures you get the ZIP file

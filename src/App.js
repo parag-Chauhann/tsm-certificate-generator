@@ -1,11 +1,13 @@
-// App.js
 import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import FileUpload from "./components/FileUpload";
 import CertificateGenerator from "./components/CertificateGenerator";
 import { db } from "./firebase"; // Ensure this is after Firebase initialization
-import WordToPdfConverter from "./components/wordToPdfConvertor";
-
 import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
+// import WordToPdfConverter from "./components/wordToPdfConvertor";
+import WordToPdfConverter from "./components/WordToPdfConvertor";  // Correct file casing
+
+
 
 const App = () => {
   const [excelData, setExcelData] = useState([]);
@@ -108,57 +110,66 @@ const App = () => {
   };
 
   return (
-    <div className="main-container">
-      <div className="container">
-        <h1>Certificate Generator</h1>
+    <Router>
+      <div className="main-container">
+        <div className="container">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                generatedCertificates.length === 0 ? (
+                  <>
+                    <h1>Certificate Generator</h1>
+                    <FileUpload onDataExtracted={handleDataExtracted} />
+                    <div className="file-upload">
+                      <h4>Select certificate template</h4>
+                      <input
+                        type="file"
+                        accept=".docx"
+                        onChange={handleTemplateUpload}
+                        className="file-upload-input"
+                      />
+                      <button
+                        className="Download-button"
+                        onClick={() =>
+                          alert("Certificate Template uploaded successfully!")
+                        }
+                      >
+                        <span>Upload Template</span>
+                      </button>
+                    </div>
 
-        {generatedCertificates.length === 0 ? (
-          <>
-            <FileUpload onDataExtracted={handleDataExtracted} />
-            <div className="file-upload">
-              <h4>Select certificate template</h4>
-              <input
-                type="file"
-                accept=".docx"
-                onChange={handleTemplateUpload}
-                className="file-upload-input"
-              />
-              <button
-                className="Download-button"
-                onClick={() =>
-                  alert("Certificate Template uploaded successfully!")
-                }
-              >
-                <span>Upload Template</span>
-              </button>
-            </div>
+                    <div className="file-upload project-number-input">
+                      <h4>Enter Project Number (TSM- is fixed)</h4>
+                      <input
+                        type="number"
+                        value={projectNumber}
+                        onChange={(e) => setProjectNumber(e.target.value)}
+                        placeholder="TSM-Take from account department"
+                      />
+                    </div>
 
-            <div className="file-upload project-number-input">
-              <h4>Enter Project Number (TSM- is fixed)</h4>
-              <input
-                type="number"
-                value={projectNumber}
-                onChange={(e) => setProjectNumber(e.target.value)}
-                placeholder="TSM-Take from account department" 
-              />
-            </div>
+                    <button className="button" onClick={handleGenerateCertificates}>
+                      Generate Certificates
+                    </button>
 
-            <button className="button" onClick={handleGenerateCertificates}>
-              Generate Certificates
-            </button>
-
-            {errorMessage && <div className="error-message">{errorMessage}</div>}
-          </>
-        ) : (
-          <CertificateGenerator
-            template={template}
-            certificates={generatedCertificates}
-            onBack={() => setGeneratedCertificates([])}
-          />
-        )}
-        <WordToPdfConverter />
+                    {errorMessage && <div className="error-message">{errorMessage}</div>}
+                  </>
+                ) : (
+                  <CertificateGenerator
+                    template={template}
+                    certificates={generatedCertificates}
+                    onBack={() => setGeneratedCertificates([])}
+                  />
+                )
+              }
+            />
+            {/* <Route path="/word-to-pdf" element={<WordToPdfConverter />} /> */}
+            <Route path="/word-to-pdf" element={<WordToPdfConverter />} />
+          </Routes>
+        </div>
       </div>
-    </div>
+    </Router>
   );
 };
 

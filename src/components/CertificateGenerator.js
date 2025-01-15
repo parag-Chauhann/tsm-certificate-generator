@@ -3,6 +3,7 @@ import { saveAs } from "file-saver";
 import JSZip from "jszip";
 import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
+import { Link } from "react-router-dom";
 
 const CertificateGenerator = ({ template, certificates, onBack }) => {
   
@@ -25,35 +26,6 @@ const CertificateGenerator = ({ template, certificates, onBack }) => {
     doc.render();
 
     return doc.getZip().generate({ type: "blob" });
-  };
-
-  // Merge all certificates into a single document
-  const handleDownloadMergedFile = async () => {
-    try {
-      const templateZip = await loadTemplate();
-      const doc = new Docxtemplater(templateZip, { paragraphLoop: true, linebreaks: true });
-
-      // Placeholder content for merged certificates
-      let mergedContent = "";
-
-      // Append content from each certificate
-      certificates.forEach(({ data }) => {
-        const individualDoc = new Docxtemplater(templateZip, { paragraphLoop: true, linebreaks: true });
-        individualDoc.setData(data);
-        individualDoc.render();
-        const individualText = individualDoc.getZip().generate({ type: "string" });
-        mergedContent += `${individualText}\n\n========================\n\n`;
-      });
-
-      // Set merged content as template data
-      doc.setData({ content: mergedContent });
-      doc.render();
-
-      const mergedBlob = doc.getZip().generate({ type: "blob" });
-      saveAs(mergedBlob, "Merged_Certificates.docx");
-    } catch (error) {
-      console.error("Error merging certificates:", error);
-    }
   };
 
   // Download all certificates in a ZIP file
@@ -85,9 +57,10 @@ const CertificateGenerator = ({ template, certificates, onBack }) => {
       <h3>Generated Certificates:</h3>
       <div className="back-download-button">
         <button className="back-button" onClick={onBack}>Back</button>
-        <button className="button" onClick={handleDownloadMergedFile}>Download Merged Document</button>
         <button className="button" onClick={handleDownloadAllAsZip}>Download All as ZIP</button>
-        <button></button>
+        <Link to="/word-to-pdf">
+        <button className="button" >Download as PDF</button>
+        </Link>
       </div>
       <ul className="certificate-list">
         {certificates.map((file, index) => (
