@@ -2,12 +2,17 @@ import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import FileUpload from "./components/FileUpload";
 import CertificateGenerator from "./components/CertificateGenerator";
-import { db } from "./firebase"; // Ensure this is after Firebase initialization
-import { doc, getDoc, setDoc, collection, addDoc } from "firebase/firestore";
+import { db } from "./firebase"; 
+import { collection, addDoc, query, getDocs, orderBy, where, limit } from "firebase/firestore";
 import WordToPdfConverter from "./components/WordToPdfConverter";
 
-
-
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="loading-spinner">
+    <div className="spinner"></div>
+    <p>Generating certificates...</p>
+  </div>
+);
 
 const App = () => {
   const [excelData, setExcelData] = useState([]);
@@ -15,6 +20,10 @@ const App = () => {
   const [generatedCertificates, setGeneratedCertificates] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [projectNumber, setProjectNumber] = useState("");
+  const [firstCertificateNumber, setFirstCertificateNumber] = useState(null);
+  const [lastCertificateNumber, setLastCertificateNumber] = useState(null);
+  const [showWarning, setShowWarning] = useState(false); // State to show/hide the warning
+  const [isLoading, setIsLoading] = useState(false); // State to show/hide loading spinner
 
   const handleDataExtracted = (data) => {
     setExcelData(data);
@@ -41,26 +50,55 @@ const App = () => {
     }
   };
 
-  const generateCertificateNumber = async (companyName) => {
-    const docRef = doc(db, "certificates", "globalCounter");
-    const docSnapshot = await getDoc(docRef);
+  // Generate certificate number based on company and topic
+  const generateCertificateNumber = async (companyName, topic, projectNumber) => {
+    const certificatesCollection = collection(db, "certificates");
 
-    let currentCounter = 16000;
-    if (docSnapshot.exists()) {
-      currentCounter = docSnapshot.data().counter;
+    // Create a composite ID based on company name and topic for better future searches
+    const certificateId = `${companyName}_${topic}`;
+
+    // Fetch the latest certificate number for the specific company and topic
+    const q = query(
+      certificatesCollection,
+      where("companyName", "==", companyName),
+      where("topic", "==", topic),
+      orderBy("certificateNumber", "desc"),
+      limit(1)
+    );
+    
+    try {
+      const querySnapshot = await getDocs(q);
+
+      let lastCertificateNumber = 16000; // Default starting number
+      if (!querySnapshot.empty) {
+        lastCertificateNumber = querySnapshot.docs[0].data().certificateNumber + 1;
+      }
+
+      // Get the current date in DDMMYYYY format
+      const currentDate = new Date();
+      const day = String(currentDate.getDate()).padStart(2, "0"); // Ensure 2 digits
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0"); // Month is 0-indexed, so add 1
+      const year = currentDate.getFullYear();
+
+      const formattedDate = `${day}${month}${year}`;
+
+      // Save new certificate info to Firestore
+      await addDoc(certificatesCollection, {
+        companyName,
+        certificateNumber: lastCertificateNumber,
+        topic,
+        createdAt: new Date(),
+      });
+
+      // Return the full certificate number concatenated as required
+      return `${projectNumber}${formattedDate}${lastCertificateNumber}`;
+    } catch (error) {
+      setErrorMessage("Error fetching certificate number. Please try again.");
+      throw new Error("Error fetching certificate number", error);
     }
-
-    await setDoc(docRef, { counter: currentCounter + 1 });
-
-    await addDoc(collection(db, "certificates"), {
-      companyName,
-      certificateNumber: currentCounter,
-    });
-
-    return currentCounter;
   };
 
-  const handleGenerateCertificates = async () => {
+  const generateCertificates = async () => {
     if (!template) {
       setErrorMessage("Please upload a Word template!");
       return;
@@ -73,40 +111,74 @@ const App = () => {
       setErrorMessage("Please enter a valid project number!");
       return;
     }
-
+  
     setErrorMessage("");
-
+    setIsLoading(true); // Show loading spinner
+  
     const certificates = [];
+    let firstNumber = null;
+    let lastNumber = null;
+  
     for (const record of excelData) {
       let dateOfTraining = record["Date of Training"];
       let formattedDate = "";
-
+  
       try {
         const dateObj = parseExcelDate(dateOfTraining);
         if (isNaN(dateObj)) throw new Error("Invalid date");
         formattedDate = formatDateToNumeric(dateObj);
       } catch (error) {
         setErrorMessage(`Invalid date format for: ${record["Name"]}`);
+        setIsLoading(false); // Hide loading spinner if error occurs
         return;
       }
-
-      const certificateNumber = await generateCertificateNumber(record["Company Name"]);
-
+  
+      // Generate the certificate number using the company name, topic, and project number
+      const certificateNumber = await generateCertificateNumber(record["Company Name"], record["Title"], projectNumber);
+  
+      if (!firstNumber) {
+        firstNumber = certificateNumber;
+      }
+      lastNumber = certificateNumber;
+  
+      // Prepend "TSM" to the certificate number
+      const fullCertificateNumber = `TSM${certificateNumber}`;
+  
+      // Prepare template data with the correctly generated certificate number
       const templateData = {
         name: record.Name,
         dateOfTraining: parseExcelDate(dateOfTraining).toLocaleDateString("en-GB"),
         title: record.Title,
-        certificateNumber: `TSM${projectNumber}${formattedDate}${certificateNumber}`,
+        certificateNumber: fullCertificateNumber, // Prepend TSM to certificate number
         companyName: record["Company Name"],
       };
-
+  
       certificates.push({
         name: `${record.Name}_Certificate.docx`,
         data: templateData,
       });
     }
-
+  
+    setFirstCertificateNumber(firstNumber);
+    setLastCertificateNumber(lastNumber);
+  
     setGeneratedCertificates(certificates);
+    setIsLoading(false); // Hide loading spinner after certificates are generated
+  };
+  
+  
+
+  const handleGenerateCertificates = () => {
+    setShowWarning(true); // Show warning before generating certificates
+  };
+
+  const handleWarningAction = (action) => {
+    if (action === "proceed") {
+      setShowWarning(false); // Close the warning
+      generateCertificates(); // Call the generateCertificates function
+    } else {
+      setShowWarning(false); // Close the warning
+    }
   };
 
   return (
@@ -149,6 +221,23 @@ const App = () => {
                       />
                     </div>
 
+                    {/* Warning Message Modal */}
+                    {showWarning && (
+                      <div className="warning-modal">
+                        <div className="warning-message">
+                          <h3>Important Warning</h3>
+                          <p>
+                            Once certificates are assigned a number, if you upload
+                            the same list again, new numbers will be assigned, and
+                            the old certificates numbers will be left blank.
+                          </p>
+
+                          <button onClick={() => handleWarningAction("proceed")}>Proceed</button>
+                          <button onClick={() => handleWarningAction("cancel")}>Cancel</button>
+                        </div>
+                      </div>
+                    )}
+
                     <button className="button" onClick={handleGenerateCertificates}>
                       Generate Certificates
                     </button>
@@ -156,17 +245,28 @@ const App = () => {
                     {errorMessage && <div className="error-message">{errorMessage}</div>}
                   </>
                 ) : (
-                  <CertificateGenerator
-                    template={template}
-                    certificates={generatedCertificates}
-                    onBack={() => setGeneratedCertificates([])}
-                  />
+                  <>
+                    <div className="certificate-range">
+                      <h4>Certificate Range:</h4>
+                      <p>
+                        {firstCertificateNumber} to {lastCertificateNumber}
+                      </p>
+                    </div>
+                    <CertificateGenerator
+                      template={template}
+                      certificates={generatedCertificates}
+                      onBack={() => setGeneratedCertificates([])}
+                    />
+                  </>
                 )
               }
             />
             <Route path="/word-to-pdf" element={<WordToPdfConverter />} />
           </Routes>
         </div>
+
+        {/* Loading Spinner */}
+        {isLoading && <LoadingSpinner />}
       </div>
     </Router>
   );
